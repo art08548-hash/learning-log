@@ -28,3 +28,23 @@ if __name__ == "__main__":
     assert dispatch_reinforcements(2, [[0, 0, 10], [1, 1, 15]]) == [10, 15]
     assert dispatch_reinforcements(4, [[0, 3, 5], [2, 2, -3]]) == [5, 5, 2, 5]
     print("第 5 关通过 🏆 前缀和模块通关！")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+from itertools import accumulate
+
+
+def dispatch_reinforcements_std(n: int, orders: list[list[int]]) -> list[int]:
+    diff = [0] * (n + 1)
+    for first, last, troops in orders:   # 拆包，变量名直接说明含义
+        diff[first] += troops
+        diff[last + 1] -= troops
+    return list(accumulate(diff[:n]))    # 对差分数组的前 n 位做前缀和
+
+
+if __name__ == "__main__":
+    assert dispatch_reinforcements_std(5, [[0, 1, 10], [1, 2, 20], [1, 4, 25]]) == [10, 55, 45, 25, 25]
+    print("标准写法也通过 ✅")

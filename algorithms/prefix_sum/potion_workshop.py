@@ -28,3 +28,26 @@ if __name__ == "__main__":
     assert count_perfect_periods([2, -2, 2, -4], 6) == 2
     assert count_perfect_periods([-1, 2, 9], 2) == 2
     print("第 3 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+from collections import Counter
+
+
+def count_perfect_periods_std(elixir: list[int], k: int) -> int:
+    counts = Counter({0: 1})          # Counter：访问不存在的键直接返回 0
+    prefix = result = 0
+    for x in elixir:
+        prefix = (prefix + x) % k     # 直接存余数；C++ / Java 要写 (p % k + k) % k
+        result += counts[prefix]
+        counts[prefix] += 1
+    return result
+
+
+if __name__ == "__main__":
+    assert count_perfect_periods_std([4, 5, 0, -2, -3, 1], 5) == 7
+    assert count_perfect_periods_std([-1, 2, 9], 2) == 2
+    print("标准写法也通过 ✅")

@@ -80,3 +80,41 @@ if __name__ == "__main__":
     check([random.randint(-10**9, 10**9) for _ in range(10**5)])
     check(list(range(10**5)))
     print("排序第 4 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def partition_std(a: list[int], lo: int, hi: int) -> int:
+    k = random.randint(lo, hi)
+    a[k], a[hi] = a[hi], a[k]          # 随机元素换到末尾当 pivot
+    p = a[hi]
+    i, j = lo, hi
+    while i < j:
+        while i < j and a[i] <= p:
+            i += 1
+        while i < j and a[j] >= p:
+            j -= 1
+        a[i], a[j] = a[j], a[i]
+    a[i], a[hi] = a[hi], a[i]
+    return i
+
+
+def _quick_sort_std(a: list[int], lo: int, hi: int) -> None:
+    if lo >= hi:
+        return
+    p = partition_std(a, lo, hi)
+    _quick_sort_std(a, lo, p - 1)
+    _quick_sort_std(a, p + 1, hi)
+
+
+def quick_sort_std(a: list[int]) -> None:
+    _quick_sort_std(a, 0, len(a) - 1)   # 外层包装：对外参数简单，对内统一传 lo / hi
+
+
+if __name__ == "__main__":
+    t = list(range(10**5))
+    quick_sort_std(t)
+    assert t == list(range(10**5))
+    print("标准写法也通过 ✅")

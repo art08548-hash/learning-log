@@ -26,3 +26,24 @@ if __name__ == "__main__":
     assert vault.query(1, 1) == -2
     assert vault.query(0, 5) == 9
     print("第 1 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+from itertools import accumulate
+
+
+class GoldVaultStd:
+    def __init__(self, gold: list[int]):
+        self.prefix = list(accumulate(gold, initial=0))   # 长度 n+1，prefix[0] = 0
+
+    def query(self, left: int, right: int) -> int:
+        return self.prefix[right + 1] - self.prefix[left]
+
+
+if __name__ == "__main__":
+    v = GoldVaultStd([3, -2, 5, 1, -4, 6])
+    assert [v.query(0, 2), v.query(2, 5), v.query(1, 1), v.query(0, 5)] == [6, 8, -2, 9]
+    print("标准写法也通过 ✅")

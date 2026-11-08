@@ -52,3 +52,19 @@ if __name__ == "__main__":
     assert merge_sort(big) == sorted(big)
 
     print("排序第 2 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def merge_sort_std(troops: list[int]) -> list[int]:
+    if len(troops) <= 1:
+        return troops
+    mid = len(troops) // 2
+    return merge(merge_sort_std(troops[:mid]), merge_sort_std(troops[mid:]))
+
+
+if __name__ == "__main__":
+    assert merge_sort_std([5, 2, 4, 6, 1, 3]) == [1, 2, 3, 4, 5, 6]
+    print("标准写法也通过 ✅")

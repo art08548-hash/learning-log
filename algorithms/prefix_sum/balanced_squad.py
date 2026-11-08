@@ -35,3 +35,25 @@ if __name__ == "__main__":
     assert longest_balanced_squad([1, 1, 1]) == 0
     assert longest_balanced_squad([1, 0, 1, 1, 0, 0, 1]) == 6
     print("第 4 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def longest_balanced_squad_std(army: list[int]) -> int:
+    first = {0: -1}          # 前缀和 → 第一次出现的下标
+    prefix = best = 0
+    for i, x in enumerate(army):
+        prefix += 1 if x == 1 else -1     # 边遍历边转化，不修改传进来的数组
+        if prefix in first:
+            best = max(best, i - first[prefix])
+        else:
+            first[prefix] = i
+    return best
+
+
+if __name__ == "__main__":
+    assert longest_balanced_squad_std([0, 0, 1, 0, 0, 0, 1, 1]) == 6
+    assert longest_balanced_squad_std([1, 1, 1]) == 0
+    print("标准写法也通过 ✅")

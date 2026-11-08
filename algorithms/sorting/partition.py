@@ -58,3 +58,26 @@ if __name__ == "__main__":
     for _ in range(1000):
         check([random.randint(-20, 20) for _ in range(random.randint(1, 30))])
     print("排序第 3 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def partition_lomuto(troops: list[int]) -> int:
+    """Lomuto 分区：单指针，更短、更常见于教材；Hoare（上面自己写的）交换更少、更快"""
+    p = troops[-1]
+    i = 0                                     # i 左边的元素都 <= p
+    for j in range(len(troops) - 1):         # 扫描除 pivot 外的元素
+        if troops[j] <= p:
+            troops[i], troops[j] = troops[j], troops[i]
+            i += 1
+    troops[i], troops[-1] = troops[-1], troops[i]   # pivot 放到分界处
+    return i
+
+
+if __name__ == "__main__":
+    t = [3, 8, 2, 5, 1, 4, 7, 6]
+    k = partition_lomuto(t)
+    assert t[k] == 6 and all(x <= 6 for x in t[:k]) and all(x >= 6 for x in t[k + 1:])
+    print("标准写法也通过 ✅")

@@ -38,3 +38,28 @@ if __name__ == "__main__":
     assert merge([-3, 7], []) == [-3, 7]
     assert merge([10, 20, 30], [1, 2]) == [1, 2, 10, 20, 30]
     print("排序第 1 关通过 🏆")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def merge_std(clan_a: list[int], clan_b: list[int]) -> list[int]:
+    result = []
+    i = j = 0
+    while i < len(clan_a) and j < len(clan_b):
+        if clan_b[j] < clan_a[i]:        # 相等时取左边 → 稳定
+            result.append(clan_b[j])
+            j += 1
+        else:
+            result.append(clan_a[i])
+            i += 1
+    result.extend(clan_a[i:])            # 用完的那一边切片为空，extend 无影响
+    result.extend(clan_b[j:])
+    return result
+
+
+if __name__ == "__main__":
+    assert merge_std([1, 3, 5], [2, 4, 6]) == [1, 2, 3, 4, 5, 6]
+    assert merge_std([], [1, 2]) == [1, 2]
+    print("标准写法也通过 ✅")

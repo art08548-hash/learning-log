@@ -49,6 +49,13 @@
 # 📘 知识卡：notes/calculus.md 卡 8～10
 # 🚫 你写的函数里不许调用 slope_central、np.gradient、sympy（测量仪只给自测验货用）
 
+#
+# 完成日期：2026-11-10 ✅
+#   链的结构第一版就全对：每一层的斜率都在它自己的输入处取值（df(g(w))、dr(q(p(w)))），
+#   卡 9 的坑一个没踩；任务 3（线性回归单个数据点的斜率）、任务 4 一次通过
+#   Claude 指出的问题：第一版 dg、df 用了测量仪（题目要求手算公式）；dp、dq、dr 没定义
+#   用到的已推导知识：D20；新推出 D21、D22（notes/derived.md）
+
 import numpy as np
 
 
@@ -65,35 +72,37 @@ def q(u): return 2 * u + 1            # 任务 2 的第二级
 def r(v): return v ** 2               # 任务 2 的第三级
 
 
-# ---------- 你来写 ----------
+# ---------- 自己写的版本 ----------
 
 # 任务 1
-def dg(w):
-    ...
+def dg(w): return 3
 
-def df(u):
-    ...
+def df(u): return 2 * u
 
 def dy_dw(w):
-    ...
+    return dg(w) * df(g(w))
 
 
 # 任务 2
+def dp(w): return 3 * (w ** 2)
+def dq(u): return 2
+def dr(v): return 2 * v
+
 def dy3_dw(w):
-    ...
+    return dp(w) * dq(p(w)) * dr(q(p(w)))
 
 
 # 任务 3
 def loss(w, x, y):
-    ...
+    return (w * x - y) ** 2
 
 def dloss_dw(w, x, y):
-    ...
+    return 2 * x * (w * x - y)
 
 
 # 任务 4
-ws = ...
-best_w = ...
+ws = np.linspace(0,10,101)
+best_w = ws[np.argmin(np.abs(dloss_dw(ws,2,10)))]
 
 
 # ⬇⬇⬇ 自测（不用改）⬇⬇⬇
@@ -127,3 +136,34 @@ assert abs(dloss_dw(best_w, 2, 10)) <= np.abs(dloss_dw(ws, 2, 10)).min() + 1e-12
 assert loss(best_w, 2, 10) < 1e-9, "best_w 的损失不是最小"
 print("✅ 任务 4 找到最准的 w")
 print(f"🎉 数学第 2 关「攻城机器的齿轮组」通关！机器自己发现了：每一级城墙值 {best_w:g} 金币")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+# 思路一样，区别只有一点：先走一趟前向，把每一级的输出存进变量（u、v），
+# 反向那一趟直接用存好的值。上面自己写的版本里 p(w) 被算了 3 次、q(p(w)) 算了 1 次；
+# 层数一多，重复计算会爆炸。「前向时把中间值存下来」正是反向传播的做法。
+
+def dy3_dw_std(w):
+    # 前向：从里到外算出每一级的输出
+    u = p(w)                  # 第一级的输出
+    v = q(u)                  # 第二级的输出
+    # 反向：从外到里，每一级的斜率在它自己的输入处取值
+    dy_dv = 2 * v             # 第三级 r(v) = v²    在 v 处的斜率
+    dv_du = 2                 # 第二级 q(u) = 2u+1  在 u 处的斜率
+    du_dw = 3 * w ** 2        # 第一级 p(w) = w³    在 w 处的斜率
+    return dy_dv * dv_du * du_dw
+
+
+def dloss_dw_std(w, x, y):
+    pred = w * x              # 前向：预测造价
+    e = pred - y              # 前向：误差
+    dL_de = 2 * e             # 外层 L = e²        在 e 处的斜率
+    de_dw = x                 # 里层 e = w·x - y   在 w 处的斜率（x、y 是常数）
+    return dL_de * de_dw      # = 2 · (w·x - y) · x
+
+
+assert np.allclose(dy3_dw_std(test_w), dy3_dw(test_w))
+assert np.allclose(dloss_dw_std(test_w, 2, 10), dloss_dw(test_w, 2, 10))
+print("标准写法也通过 ✅")

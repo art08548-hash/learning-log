@@ -99,7 +99,9 @@ Python 自带 `sorted()` 和 `list.sort()`，用的是 Timsort，O(n log n)，�
 
 **名字：** 这个问题也叫「荷兰国旗问题」（Dutch National Flag），因为要把三种颜色的元素分成三段，像荷兰国旗的红、白、蓝三条。
 
-### 📘 标准写法：Dijkstra 三路分区（一遍扫完）
+### 📘 标准写法：Dijkstra 三路分区（一遍扫完） 📌 待学习
+
+> 📌 **待学习**：2026-11-09 标记，之后要仔细学一遍，最好自己默写出来跑通 [quick_sort3.py](../algorithms/sorting/quick_sort3.py) 的自测
 
 > 2026-11-09 三色军团通关后补充。代码见 [quick_sort3.py](../algorithms/sorting/quick_sort3.py)
 

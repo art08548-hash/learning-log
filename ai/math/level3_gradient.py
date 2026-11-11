@@ -51,6 +51,14 @@
 # 📘 知识卡：notes/calculus.md 卡 11～14
 # 🚫 任务 2～4 你写的函数里不许调用 numeric_grad、np.gradient、sympy
 
+#
+# 完成日期：2026-11-11 ✅
+#   任务 2 的两个偏导数、mse、任务 3 的两个公式、任务 5 的方向全部一次推对；
+#   测量仪直接用了上一关学的中心差分
+#   Claude 指出的问题：numeric_grad 少了括号（先乘除后加减，/ 2 * h 是除以 2 再乘 h）；
+#   grad_mse 第 0 个分量把 xs 乘在了 np.mean 外面（应该先乘再平均）；返回了列表而不是 numpy 数组
+#   学卡 13 时自己追问并推出 D23；用到 D6、D19、D21、D22；新推出 D24（notes/derived.md）
+
 import numpy as np
 
 
@@ -62,38 +70,38 @@ xs = np.array([1.0, 2.0, 3.0, 4.0, 5.0])             # 账本：5 个城墙等�
 ys = np.array([25.0, 30.0, 35.0, 40.0, 45.0])        # 账本：对应的 5 个实际造价
 
 
-# ---------- 你来写 ----------
+# ---------- 自己写的版本 ----------
 
 # 任务 1
 def numeric_grad(f, w, b, h=1e-5):
-    ...
+    return np.array([(f(w + h,b) - f(w - h,b)) / (2 * h),(f(w,b + h) - f(w,b - h)) / (2 * h)])
 
 
 # 任务 2
 def dT_dw(w, b):
-    ...
+    return 2 * w + 3 * b
 
 def dT_db(w, b):
-    ...
+    return 3 * b ** 2 + 3 * w
 
 
 # 任务 3
 def grad_one(w, b, x, y):
-    ...
+    return np.array([(w * x + b - y) * 2 * x,(w * x + b - y) * 2])
 
 
 # 任务 4
 def mse(w, b, xs, ys):
-    ...
+    return np.mean((w * xs + b - ys) ** 2)
 
 def grad_mse(w, b, xs, ys):
-    ...
+    return np.array([np.mean((w * xs + b - ys) * xs) * 2,np.mean(w * xs + b -ys) * 2])
 
 
 # 任务 5
-g0 = ...
-w_should = ...
-b_should = ...
+g0 = grad_mse(0,0,xs,ys)
+w_should = "increase"
+b_should = "increase"
 
 
 # ⬇⬇⬇ 自测（不用改）⬇⬇⬇
@@ -146,3 +154,32 @@ assert mse(0 + dw, 0, xs, ys) < mse(0, 0, xs, ys), "按你说的方向拧 w，�
 assert mse(0, 0 + db, xs, ys) < mse(0, 0, xs, ys), "按你说的方向拧 b，损失变大了"
 print("✅ 任务 5 两个旋钮各往哪拧")
 print("🎉 数学第 3 关「双旋钮校准」通关！")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def grad_mse_std(w, b, xs, ys):
+    """误差只算一次，存进变量 errs，两个偏导数都用它。"""
+    errs = w * xs + b - ys                   # 每条记录的误差，数组，和 xs 等长
+    dL_dw = np.mean(2 * errs * xs)           # 每条记录「2 × 误差 × 输入」的平均
+    dL_db = np.mean(2 * errs)                # 每条记录「2 × 误差」的平均
+    return np.array([dL_dw, dL_db])
+
+
+def numeric_grad_std(f, params, h=1e-5):
+    """旋钮个数任意的测量仪：params 是装着所有旋钮的 numpy 数组，f 吃这个数组、返回一个数。
+    一次只挪动一个旋钮，其余保持原样。深度学习里的 gradient check 就是这个函数。"""
+    grad = np.zeros_like(params, dtype=float)      # 和 params 同形状的全 0 数组，用来装结果
+    for i in range(params.size):                   # 逐个旋钮量
+        step = np.zeros_like(params, dtype=float)
+        step[i] = h                                # 只有第 i 个旋钮挪动 h
+        grad[i] = (f(params + step) - f(params - step)) / (2 * h)
+    return grad
+
+
+assert np.allclose(grad_mse_std(1.0, 2.0, xs, ys), grad_mse(1.0, 2.0, xs, ys))
+_loss = lambda params: np.mean((params[0] * xs + params[1] - ys) ** 2)     # params = [w, b]
+assert np.allclose(numeric_grad_std(_loss, np.array([1.0, 2.0])), grad_mse(1.0, 2.0, xs, ys), atol=1e-4)
+print("标准写法也通过 ✅（手算梯度和测量仪一致 = gradient check 通过）")

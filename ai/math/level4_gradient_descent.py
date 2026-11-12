@@ -13,6 +13,14 @@
 # 📘 知识卡：notes/calculus.md 卡 15～17
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、sklearn 等现成的拟合工具
 
+#
+# 完成日期：2026-11-12 ✅（2026-11-11 开题）
+#   第一个完全手写、自己训练出来的模型：从 [0, 0] 出发 2000 步，学到 w = 5、b = 20，损失 1275 → 1.6e-27
+#   step 一行写对；descend_1d 复用了 step；任务 3 没运行就推出 lr = 1.1 会「反复横跳、越来越远」（→ D26）
+#   Claude 指出的问题：descend_1d 第一版调用 step 时只传了一个参数（括号里已经是算好的新位置）；
+#   train 的起点写成了列表 [0.0, 0.0]（只靠第一步运算碰巧变成数组，走 0 步时返回的还是列表）；train 里没复用 step
+#   用到 D19、D24、D25、D26；新推出 D26（notes/derived.md）
+
 import numpy as np
 
 
@@ -46,7 +54,7 @@ def grad_mse(params, xs, ys):
 #       # 要求：不许改动传进来的 params 数组本身
 # ============================================================
 def step(params, grad, lr):
-    ...
+    return params - lr * grad
 
 
 # ============================================================
@@ -63,10 +71,14 @@ def step(params, grad, lr):
 #       #       第 0 个元素是出发位置 w0，第 k 个元素是走完第 k 步之后的位置
 # ============================================================
 def dL(w):
-    ...
+    return 2 * (w - 4)
 
 def descend_1d(df, w0, lr, n_steps):
-    ...
+    num = [w0]
+    for _ in range(n_steps):
+        w0 = step(w0,df(w0),lr)
+        num.append(w0)
+    return np.array(num)
 
 
 # ============================================================
@@ -80,9 +92,9 @@ def descend_1d(df, w0, lr, n_steps):
 #   fate_10 = lr 为 1.0 时的命运
 #   fate_11 = lr 为 1.1 时的命运
 # ============================================================
-fate_01 = ...
-fate_10 = ...
-fate_11 = ...
+fate_01 = "converge"
+fate_10 = "bounce"
+fate_11 = "explode"
 
 
 # ============================================================
@@ -97,9 +109,13 @@ fate_11 = ...
 #   然后用 lr = 0.05、n_steps = 2000 训练一次，结果存进 trained, losses
 # ============================================================
 def train(xs, ys, lr, n_steps):
-    ...
-
-trained, losses = ..., ...
+    params = [0.0,0.0]
+    losses = [mse(params,xs,ys)]
+    for _ in range(n_steps):
+        params = params - lr * grad_mse(params,xs,ys)
+        losses.append(mse(params,xs,ys))
+    return (params,losses)
+trained, losses = train(xs,ys,0.05,2000)
 
 
 # ============================================================
@@ -111,9 +127,8 @@ trained, losses = ..., ...
 #   cost_lv8 = 用任务 4 训练出的 trained，预测 8 级城墙的造价（账本里没有 8 级）
 # ============================================================
 def predict(params, x):
-    ...
-
-cost_lv8 = ...
+    return params[0] * x + params[1]
+cost_lv8 = predict(trained,8)
 
 
 # ⬇⬇⬇ 自测（不用改）⬇⬇⬇
@@ -172,3 +187,36 @@ assert np.allclose(predict(trained, xs), ys, atol=1e-2), "用 trained 预测账�
 assert abs(cost_lv8 - 60) < 1e-2, f"8 级城墙的预测造价不对：你的 {cost_lv8}"
 print("✅ 任务 5 用模型预测")
 print("🎉 数学第 4 关「谷底行军」通关！你训练出了第一个手写模型！")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def descend_1d_std(df, w0, lr, n_steps):
+    """事先知道一共走几步，先开好数组按下标填；当前位置另起名 w，w0 始终表示出发位置。"""
+    path = np.zeros(n_steps + 1)          # 路径：形状 (n_steps + 1,) 的全 0 数组
+    path[0] = w0
+    w = w0                                # 当前位置
+    for k in range(n_steps):
+        w = step(w, df(w), lr)
+        path[k + 1] = w
+    return path
+
+
+def train_std(xs, ys, lr, n_steps):
+    """训练循环：算梯度 → 走一步 → 记录损失。训练 Transformer 的循环骨架也是这个。"""
+    params = np.zeros(2)                  # 起点 [0, 0]，一开始就是 numpy 数组
+    losses = [mse(params, xs, ys)]        # 第 0 个：出发时的损失
+    for _ in range(n_steps):
+        grad = grad_mse(params, xs, ys)   # 1. 算梯度（深度学习里这一行换成反向传播）
+        params = step(params, grad, lr)   # 2. 走一步（复用任务 1，更新规则只写在一个地方）
+        losses.append(mse(params, xs, ys))
+    return params, np.array(losses)       # 返回多个值不用加括号，Python 自动打包成元组
+
+
+assert np.allclose(descend_1d_std(dL, 0.0, 0.1, 3), descend_1d(dL, 0.0, 0.1, 3))
+_ps, _ls = train_std(xs, ys, 0.05, 2000)
+assert np.allclose(_ps, trained) and np.allclose(_ls, losses)
+assert isinstance(train_std(xs, ys, 0.05, 0)[0], np.ndarray)     # 走 0 步也返回数组
+print("标准写法也通过 ✅")

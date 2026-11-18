@@ -8,6 +8,10 @@
 #
 # 🎯 每个任务的说明就写在要实现的位置正上方
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、sklearn 等现成的拟合工具
+#
+# 进度：2026-11-17 任务 1 ✅（任务 2、3 未做）
+#   train_until 用 while 循环；初始值 e = 出发时损失 + 2 × tol，保证第一次一定进得了循环
+#   第一版没用上 max_steps；第二版写成 <=，多走了 1 步（51 vs 50），自己改成 < 通过
 
 import numpy as np
 
@@ -41,7 +45,16 @@ def grad(params, xs, ys):
 #       #   steps_used：一共走了几步，一个整数
 # ============================================================
 def train_until(xs, ys, lr, tol, max_steps):
-    ...
+    params = np.zeros(2,)
+    g = grad(params,xs,ys)
+    e = mse(params,xs,ys) + 2 * tol
+    steps_used = 0
+    while steps_used < max_steps and np.abs(e - mse(params,xs,ys)) >= tol:
+        e = mse(params,xs,ys)
+        params = params - lr * g
+        g = grad(params,xs,ys)
+        steps_used += 1
+    return params,steps_used
 
 
 # ============================================================

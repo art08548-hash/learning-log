@@ -9,9 +9,11 @@
 # 🎯 每个任务的说明就写在要实现的位置正上方
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、sklearn 等现成的拟合工具
 #
-# 进度：2026-11-17 任务 1 ✅（任务 2、3 未做）
+# 完成日期：2026-11-18 ✅（2026-11-17 任务 1）
 #   train_until 用 while 循环；初始值 e = 出发时损失 + 2 × tol，保证第一次一定进得了循环
 #   第一版没用上 max_steps；第二版写成 <=，多走了 1 步（51 vs 50），自己改成 < 通过
+#   任务 2、3 一次写对：走了 2391 步自己停下，w ≈ 502.6、b ≈ 979.0
+#   Claude 的建议：True if 条件 else False 可以直接写成「条件」本身；train_until 里 mse(params) 每轮算了两次
 
 import numpy as np
 
@@ -63,15 +65,15 @@ def train_until(xs, ys, lr, tol, max_steps):
 #       params, steps_used
 #   stopped_early = 是不是在走满 max_steps 之前就自己停了？填 True 或 False（看 steps_used 判断）
 # ============================================================
-params, steps_used = ..., ...
-stopped_early = ...
+params, steps_used = train_until(mine_lv,gold,0.01,1e-6,100000)
+stopped_early = True if steps_used < 100000 else False
 
 
 # ============================================================
 # 任务 3｜预测
 #   gold_lv12 = 用训练好的 params，预测 12 级金矿每小时产多少金（账本里最高只有 10 级）
 # ============================================================
-gold_lv12 = ...
+gold_lv12 = params[0] * 12 + params[1]
 
 
 # ⬇⬇⬇ 自测（不用改）⬇⬇⬇
@@ -99,3 +101,27 @@ print(f"✅ 任务 2 开工（走了 {steps_used} 步自己停下，w = {params[
 assert abs(gold_lv12 - (params[0] * 12 + params[1])) < 1e-9
 print(f"✅ 任务 3 预测（12 级金矿 ≈ {gold_lv12:.0f} 金 / 小时）")
 print("🎉 热身 2「金矿自动停工」通关！")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def train_until_std(xs, ys, lr, tol, max_steps):
+    """for 循环数步数，满足容差就 return；损失每步只算一次（H1）。"""
+    params = np.zeros(2)
+    prev = mse(params, xs, ys)                 # 这一步之前的损失
+    for k in range(1, max_steps + 1):          # k = 走完这一步之后的步数，1, 2, …, max_steps
+        params = params - lr * grad(params, xs, ys)
+        cur = mse(params, xs, ys)              # 这一步之后的损失
+        if abs(prev - cur) < tol:
+            return params, k                   # 提前停：这一步算走过了
+        prev = cur                             # 这一步的「之后」就是下一步的「之前」
+    return params, max_steps                   # 走满了也没停
+
+
+for _args in [(0.01, 1e-6, 100000), (0.01, 1.0, 100000), (0.01, 1e-6, 50)]:
+    _a, _b = train_until_std(mine_lv, gold, *_args), train_until(mine_lv, gold, *_args)
+    assert np.allclose(_a[0], _b[0]) and _a[1] == _b[1]
+assert stopped_early == (steps_used < 100000)          # 比较本身就是 True / False，不用再套 if else
+print("标准写法也通过 ✅")

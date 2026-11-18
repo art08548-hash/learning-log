@@ -263,6 +263,9 @@
   - 来源：2026-11-12 第 4 关（`descend_1d` 复用了，`train` 没复用）
 - **H11 参数一开始就建成 numpy 数组**：起点写 `np.zeros(2)` 或 `np.array([0.0, 0.0])`，不写列表 `[0.0, 0.0]`
   - 来源：2026-11-12 第 4 关
+<a id="h-bool-direct"></a>
+- **H12 比较的结果直接用**：`stopped_early = steps_used < max_steps`，不写 `True if steps_used < max_steps else False`
+  - 来源：2026-11-18 热身 2
 
 ---
 

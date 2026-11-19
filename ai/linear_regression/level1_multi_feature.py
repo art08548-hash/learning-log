@@ -14,6 +14,11 @@
 # 📘 知识卡：notes/linear_regression.md 卡 1～4
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、np.linalg.solve、sklearn 等现成的拟合工具
 # 🚫 除了 train 里那个「走 n_steps 步」的循环，其他地方不许写 for 循环
+#
+# 进度：2026-11-19 任务 1、2 ✅（任务 3～6 未做）
+#   predict 用 X * w 再按 axis=1 求和；grad 里 u 是每条记录的 2 × 误差
+#   grad 第一版 u 形状 (n,) 直接乘 X，广播把它当成「行」去对齐最后一维 → 形状错；
+#   第二版乘了元组 (n, 1) 而不是变形后的 u；第三版 u.reshape(n, 1) 通过
 
 import numpy as np
 
@@ -43,7 +48,7 @@ y = 3 * _level + 0.2 * _segs + 5 * _town + 10 + rng.normal(0, 3, size=n)   # 实
 #       # 不许写 for 循环
 # ============================================================
 def predict(X, w, b):
-    ...
+    return np.sum(X * w,axis=1) + b
 
 
 # ============================================================
@@ -58,10 +63,13 @@ def predict(X, w, b):
 #       # （d 是几都要能用：自测会用 1 个、3 个、5 个特征的数据来测）
 # ============================================================
 def mse(X, y, w, b):
-    ...
+    return np.mean((np.sum(X * w,axis=1) + b - y) ** 2)
 
 def grad(X, y, w, b):
-    ...
+    u = 2 * (np.sum(X * w,axis=1) + b - y)
+    a = np.ones(np.shape(X))
+    c  = np.mean(u.reshape(np.shape(X)[0],1) * a * X,axis=0)
+    return c,np.mean(u)
 
 
 # ============================================================

@@ -36,6 +36,14 @@
 先标记下来，之后专门花时间仔细学：
 
 - [ ] **Dijkstra 三路分区（一遍扫完）**：`lt`、`i`、`gt` 三指针维持四段，和 `a[gt]` 交换后 `i` 不动 → [排序笔记 卡 6](notes/sorting.md#-标准写法dijkstra-三路分区一遍扫完--待学习)、[代码](algorithms/sorting/quick_sort3.py)（2026-11-09 标记）
+- [ ] **线性回归第 1 关通关后，自己推导这些（2026-11-20 标记，Claude 讲过但还没亲手推透）**：
+  - 某个权重方向的曲率 `= 2 · mean(那一列特征²)`（对梯度再求一次导）→ [微积分笔记 卡 18](notes/calculus.md)
+  - 多维情况下学习率上限为什么还是 `2 / 曲率`，由最陡的方向说了算 → [D26](notes/derived.md#d-lr-threshold)、[D27](notes/derived.md#d-why-standardize)
+  - `w[j]` 和 `b` 之间的交叉曲率 `= 2 · mean(第 j 列)`，为什么它让椭圆「斜着放」，中心化后为什么消失 → [D28](notes/derived.md#d-ellipse-to-circle)
+  - 谷底附近的等高线为什么是椭圆
+  - 标准化后最优的 `b` 为什么正好是 `mean(y)`
+  - 方差 = 「用平均值去猜每个数」的均方误差；平均值正是让这个均方误差最小的那个数
+  - 梯度的矩阵写法：`mean(2 · errs 变成一列 · X, axis=0)` 等于 `2 / n · X.T @ errs`
 
 ## 🗺️ 路线图
 

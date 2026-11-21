@@ -15,10 +15,11 @@
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、np.linalg.solve、sklearn 等现成的拟合工具
 # 🚫 除了 train 里那个「走 n_steps 步」的循环，其他地方不许写 for 循环
 #
-# 进度：2026-11-19 任务 1、2 ✅（任务 3～6 未做）
+# 进度：2026-11-19 任务 1、2 ✅，2026-11-20 任务 3 ✅（任务 4～6 未做）
 #   predict 用 X * w 再按 axis=1 求和；grad 里 u 是每条记录的 2 × 误差
 #   grad 第一版 u 形状 (n,) 直接乘 X，广播把它当成「行」去对齐最后一维 → 形状错；
 #   第二版乘了元组 (n, 1) 而不是变形后的 u；第三版 u.reshape(n, 1) 通过
+#   2026-11-20 任务 3 standardize ✅：第一版用 keepdims 只返回 Xs，改成返回 (Xs, mean, std) 且形状 (d,)
 
 import numpy as np
 
@@ -84,7 +85,9 @@ def grad(X, y, w, b):
 #       Xs, x_mean, x_std = standardize(X_raw)
 # ============================================================
 def standardize(X):
-    ...
+    mean = np.mean(X,axis=0)
+    std = np.std(X,axis=0)
+    return (X - mean) / std,mean,std
 
 Xs, x_mean, x_std = ..., ..., ...
 

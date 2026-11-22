@@ -15,11 +15,13 @@
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、np.linalg.solve、sklearn 等现成的拟合工具
 # 🚫 除了 train 里那个「走 n_steps 步」的循环，其他地方不许写 for 循环
 #
-# 进度：2026-11-19 任务 1、2 ✅，2026-11-20 任务 3 ✅（任务 4～6 未做）
+# 进度：2026-11-19 任务 1、2 ✅，2026-11-20 任务 3 ✅，2026-11-21 任务 4 ✅（任务 5、6 未做）
 #   predict 用 X * w 再按 axis=1 求和；grad 里 u 是每条记录的 2 × 误差
 #   grad 第一版 u 形状 (n,) 直接乘 X，广播把它当成「行」去对齐最后一维 → 形状错；
 #   第二版乘了元组 (n, 1) 而不是变形后的 u；第三版 u.reshape(n, 1) 通过
 #   2026-11-20 任务 3 standardize ✅：第一版用 keepdims 只返回 Xs，改成返回 (Xs, mean, std) 且形状 (d,)
+#   2026-11-21 任务 4 ✅ 一次写对：train 复用 grad；三种命运全对；损失 13918 → 8.05（第 100 步就到底）
+#     can_reach_zero 是真的跑了 100 万步去验证（约 40 秒）；Claude 建议：用「噪声」推出来更快，且 True if … else False 直接写条件（H12）
 
 import numpy as np
 
@@ -89,7 +91,7 @@ def standardize(X):
     std = np.std(X,axis=0)
     return (X - mean) / std,mean,std
 
-Xs, x_mean, x_std = ..., ..., ...
+Xs, x_mean, x_std = standardize(X_raw)
 
 
 # ============================================================
@@ -112,15 +114,24 @@ Xs, x_mean, x_std = ..., ..., ...
 #   can_reach_zero = 第 3 组再多走 100 万步，损失能不能降到 0？填 True 或 False
 # ============================================================
 def train(X, y, lr, n_steps):
-    ...
+    w = np.zeros(np.shape(X)[1],)
+    b = 0
+    losses = [mse(X,y,w,b)]
+    for _ in range(n_steps):
+        gw,gb = grad(X,y,w,b)
+        w = w - lr * gw
+        b = b - lr * gb
+        losses.append(mse(X,y,w,b))
+    return w,b,np.array(losses)
+        
 
-fate_raw_big = ...
-fate_raw_small = ...
-fate_std = ...
+fate_raw_big = "explode"
+fate_raw_small = "slow"
+fate_std = "converge"
 
-w_std, b_std, losses_std = ..., ..., ...
+w_std, b_std, losses_std = train(Xs,y,0.1,1000)
 
-can_reach_zero = ...
+can_reach_zero =True if train(Xs,y,0.1,1001000)[2][-1] == 0 else False
 
 
 # ============================================================

@@ -15,7 +15,7 @@
 # 🚫 不许用 np.polyfit、np.linalg.lstsq、np.linalg.solve、sklearn 等现成的拟合工具
 # 🚫 除了 train 里那个「走 n_steps 步」的循环，其他地方不许写 for 循环
 #
-# 进度：2026-11-19 任务 1、2 ✅，2026-11-20 任务 3 ✅，2026-11-21 任务 4 ✅，2026-11-23 任务 5 ✅（任务 6 未做）
+# 完成日期：2026-11-24 ✅（2026-11-15 开题；任务 1、2 11-19，任务 3 11-20，任务 4 11-21，任务 5 11-23，任务 6 11-24）
 #   predict 用 X * w 再按 axis=1 求和；grad 里 u 是每条记录的 2 × 误差
 #   grad 第一版 u 形状 (n,) 直接乘 X，广播把它当成「行」去对齐最后一维 → 形状错；
 #   第二版乘了元组 (n, 1) 而不是变形后的 u；第三版 u.reshape(n, 1) 通过
@@ -25,6 +25,8 @@
 #   2026-11-23 任务 5 ✅：第一版直接拿原始 X_new 乘 w_std（预测 3561、912，大了二三十倍）；
 #     第二、三版用 standardize(X_new) 重新算了新数据自己的平均值和标准差（两条数据永远变成 ±1）；
 #     第四版用训练账本的 x_mean、x_std 换算后通过；自己总结出 D29
+#   2026-11-24 任务 6 ✅：第一版把 w_std 当成要标准化的量（(w - std) / mean）；改用算式展开（比较系数）
+#     秒推出一个特征的 y = x·w/s + (b - m·w/s)（→ D30）；推广到多特征时第一版 b 少了 np.sum，补上后通关
 
 import numpy as np
 
@@ -162,9 +164,9 @@ cost_new = np.sum((X_new - x_mean) / x_std * w_std,axis=1) + b_std
 #   然后看看 w_orig：城墙每升 1 级、每多 1 段、大本营每升 1 级，造价各多多少万金币？
 # ============================================================
 def to_original(w_std, b_std, mean, std):
-    ...
+    return w_std / std , b_std - np.sum(mean * w_std / std)
 
-w_orig, b_orig = ..., ...
+w_orig, b_orig = to_original(w_std,b_std,x_mean,x_std)
 
 
 # ⬇⬇⬇ 自测（不用改）⬇⬇⬇
@@ -239,3 +241,57 @@ assert np.allclose(predict(_Xr, w_orig, b_orig), predict((_Xr - x_mean) / x_std,
 assert np.allclose(w_orig, [3, 0.2, 5], atol=0.15) and abs(b_orig - 10) < 2.5
 print(f"✅ 任务 6 规律翻译成人话：城墙每升 1 级 +{w_orig[0]:.2f}，每多 1 段 +{w_orig[1]:.3f}，大本营每升 1 级 +{w_orig[2]:.2f}，基础 {b_orig:.2f}（万金币）")
 print("🎉 线性回归第 1 关「大本营的造价账本」通关！")
+
+
+# ============================================================
+# 📘 业界标准写法（对照用；上面是自己写的版本）
+# ============================================================
+
+def predict_std(X, w, b):
+    """矩阵 @ 向量：每一行和 w 做点积，等价于 np.sum(X * w, axis=1)（numpy 第 4 章）。"""
+    return X @ w + b
+
+
+def mse_std(X, y, w, b):
+    errs = predict_std(X, w, b) - y          # 复用 predict（H10），误差只算一次（H1）
+    return np.mean(errs ** 2)
+
+
+def grad_std(X, y, w, b):
+    """X.T @ errs 一次算出每一列特征和误差的乘积之和；为什么等价，见 README 待推导第 7 条。"""
+    n = X.shape[0]
+    errs = predict_std(X, w, b) - y
+    dw = 2 / n * (X.T @ errs)                # 形状 (d,)
+    db = 2 * np.mean(errs)
+    return dw, db
+
+
+def train_std(X, y, lr, n_steps):
+    w = np.zeros(X.shape[1])
+    b = 0.0                                  # 一开始就是小数（H11）
+    losses = [mse_std(X, y, w, b)]
+    for _ in range(n_steps):
+        dw, db = grad_std(X, y, w, b)
+        w = w - lr * dw
+        b = b - lr * db
+        losses.append(mse_std(X, y, w, b))
+    return w, b, np.array(losses)
+
+
+def to_original_std(w_std, b_std, mean, std):
+    w_orig = w_std / std                     # 每个特征：斜率除以它的标准差
+    b_orig = b_std - np.sum(w_orig * mean)   # 原点平移：每个特征按「新斜率 × 平均值」补偿
+    return w_orig, b_orig
+
+
+# 新数据：用训练时的尺子换算（D29），再复用 predict
+_cost_new_std = predict_std((X_new - x_mean) / x_std, w_std, b_std)
+
+assert np.allclose(predict_std(X_raw, *[np.array([1.0, 2.0, 3.0]), 0.5]), predict(X_raw, np.array([1.0, 2.0, 3.0]), 0.5))
+_g1, _g2 = grad_std(Xs, y, w_std, b_std), grad(Xs, y, w_std, b_std)
+assert np.allclose(_g1[0], _g2[0]) and np.isclose(_g1[1], _g2[1])
+_ws, _bs, _ls = train_std(Xs, y, 0.1, 1000)
+assert np.allclose(_ws, w_std) and np.isclose(_bs, b_std)
+assert np.allclose(to_original_std(w_std, b_std, x_mean, x_std)[0], w_orig)
+assert np.allclose(_cost_new_std, cost_new)
+print("标准写法也通过 ✅")
